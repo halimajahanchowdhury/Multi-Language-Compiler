@@ -1,0 +1,27 @@
+# Compiler output and binaries
+*.exe
+*.o
+*.obj
+bin/
+build/
+
+# Flex and Bison generated files
+src/lexer/lex.yy.c
+src/parser/parser.tab.c
+src/parser/parser.tab.h
+src/parser/parser.output
+y.tab.c
+y.tab.h
+lex.yy.c
+
+# Graphviz outputs
+*.dot
+*.png
+!docs/*.png
+
+# IDE and OS files
+.vscode/
+.idea/
+*.swp
+*~
+Thumbs.db
