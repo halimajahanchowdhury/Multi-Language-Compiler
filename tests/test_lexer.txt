@@ -1,0 +1,35 @@
+// Single line comment: Multi-Language test
+/* Multi-line comment
+   testing all three languages: C, C++, and Java */
+
+#include <stdio.h>
+using namespace std;
+import java.util.*;
+
+int a = 10;
+float b = 3.14;
+bool flag = true;
+
+// C construct
+printf("Result is %d\n", a);
+
+// C++ construct
+cout << "Value: " << a << endl;
+
+// Java construct
+System.out.println("Processing complete");
+
+while (a > 0) {
+    a = a - 1;
+    a++;
+}
+
+if (flag == true && b >= 2.0) {
+    print a;
+} else {
+    print b;
+}
+
+// Deliberate lexical error test characters
+@
+$
