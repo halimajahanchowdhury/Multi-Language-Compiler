@@ -16,7 +16,7 @@ void yyerror(const char *s) {
 }
 %}
 
-%define parse.error verbose
+%error-verbose
 
 /* Bison Semantic Values Union */
 %union {
@@ -75,15 +75,19 @@ void yyerror(const char *s) {
 
 /* Top-level Program Structure */
 program:
-      header_list class_definition
-    | header_list function_definition
-    | statement_list
+      unit_list
     ;
 
-/* Headers and Imports (C/C++ #include, Java import, C++ using namespace) */
-header_list:
-      /* empty */
-    | header_list header_item
+unit_list:
+      unit
+    | unit_list unit
+    ;
+
+unit:
+      header_item
+    | class_definition
+    | function_definition
+    | statement
     ;
 
 header_item:
@@ -111,7 +115,6 @@ method_definition:
 /* C / C++ Function Definition */
 function_definition:
       type TOK_MAIN TOK_LPAREN parameter_list_opt TOK_RPAREN block_statement
-    | TOK_VOID TOK_MAIN TOK_LPAREN parameter_list_opt TOK_RPAREN block_statement
     | type TOK_IDENT TOK_LPAREN parameter_list_opt TOK_RPAREN block_statement
     ;
 
