@@ -2,12 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#if defined(HAVE_BISON) || defined(YYBISON)
+#include "symtab.h"
+#include "ast.h"
 #include "parser.tab.h"
-#else
-#include "tokens.h"
-#endif
 
 int line_num = 1;
 int col_num = 1;
@@ -115,10 +112,10 @@ NEWLINE     \n
 "."                         { count_columns(yytext); return TOK_DOT; }
 ":"                         { count_columns(yytext); return TOK_COLON; }
 
-{INT_LIT}                   { count_columns(yytext); return TOK_INT_LIT; }
-{FLOAT_LIT}                 { count_columns(yytext); return TOK_FLOAT_LIT; }
-{STRING_LIT}                { count_columns(yytext); return TOK_STRING_LIT; }
-{IDENT}                     { count_columns(yytext); return TOK_IDENT; }
+{INT_LIT}                   { yylval.int_val = atoi(yytext); count_columns(yytext); return TOK_INT_LIT; }
+{FLOAT_LIT}                 { yylval.float_val = atof(yytext); count_columns(yytext); return TOK_FLOAT_LIT; }
+{STRING_LIT}                { yylval.str_val = strdup(yytext); count_columns(yytext); return TOK_STRING_LIT; }
+{IDENT}                     { yylval.str_val = strdup(yytext); count_columns(yytext); return TOK_IDENT; }
 
 .                           {
                                 fprintf(stderr, "[Lexical Error] Unrecognized character '%s' at line %d, column %d\n", yytext, line_num, col_num);
@@ -128,5 +125,3 @@ NEWLINE     \n
                             }
 
 %%
-
-
