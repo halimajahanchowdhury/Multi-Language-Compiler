@@ -99,4 +99,7 @@ ASTNode *ast_append_stmt(ASTNode *list, ASTNode *stmt);
 /* Memory Deallocation */
 void ast_free(ASTNode *node);
 
+/* Visualization */
+void ast_print(const ASTNode *node, int indent);
+
 #endif /* AST_H */
