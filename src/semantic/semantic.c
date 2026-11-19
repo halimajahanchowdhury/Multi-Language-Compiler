@@ -30,6 +30,7 @@ static void check_node(ASTNode *node, SymbolTable *st) {
             if (node->right) {
                 check_node(node->right, st);
             }
+            typecheck_statement(node);
             break;
         }
 
@@ -46,6 +47,7 @@ static void check_node(ASTNode *node, SymbolTable *st) {
             if (node->right) {
                 check_node(node->right, st);
             }
+            typecheck_statement(node);
             break;
         }
 
@@ -68,11 +70,13 @@ static void check_node(ASTNode *node, SymbolTable *st) {
             if (node->else_branch) {
                 check_node(node->else_branch, st);
             }
+            typecheck_statement(node);
             break;
 
         case NODE_WHILE:
             check_node(node->cond, st);
             check_node(node->body, st);
+            typecheck_statement(node);
             break;
 
         case NODE_FOR:
@@ -81,6 +85,7 @@ static void check_node(ASTNode *node, SymbolTable *st) {
             if (node->cond) check_node(node->cond, st);
             if (node->step) check_node(node->step, st);
             if (node->body) check_node(node->body, st);
+            typecheck_statement(node);
             symtab_exit_scope(st);
             break;
 
@@ -89,6 +94,7 @@ static void check_node(ASTNode *node, SymbolTable *st) {
             if (node->left) {
                 check_node(node->left, st);
             }
+            typecheck_statement(node);
             break;
 
         case NODE_BINARY_OP:
