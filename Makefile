@@ -36,8 +36,7 @@ $(TARGET): $(LEXER_DIR)/lex.yy.c $(PARSER_DIR)/parser.tab.c
 		$(AST_DIR)/ast_print.c \
 		$(SYM_DIR)/symtab.c \
 		$(SEM_DIR)/semantic.c \
-		$(SEM_DIR)/typecheck.c \
-		$(TAC_DIR)/tac.c
+		$(SEM_DIR)/typecheck.c
 
 clean:
 	$(RM) $(TARGET)
