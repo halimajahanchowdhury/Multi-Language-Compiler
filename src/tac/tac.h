@@ -65,4 +65,8 @@ void tac_append_list(TACList *dest, TACList *src);
 void tac_print(const TACList *list);
 void tac_fprint(FILE *out, const TACList *list);
 
+/* Code Generation for Expressions and Assignments */
+char *tac_gen_expr(TACList *list, ASTNode *expr);
+void tac_gen_assign(TACList *list, ASTNode *assign);
+
 #endif /* TAC_H */
