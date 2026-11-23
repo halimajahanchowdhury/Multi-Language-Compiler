@@ -4,6 +4,7 @@
 #include "symtab.h"
 #include "ast.h"
 #include "semantic.h"
+#include "tac.h"
 #include "parser.tab.h"
 
 extern FILE *yyin;
@@ -161,6 +162,17 @@ int main(int argc, char **argv) {
     }
 
     printf("[Validation Succeeded] Front-end parsing and semantic validation passed with 0 errors.\n");
+
+    /* Phase 4: Intermediate Code Generation (Three Address Code) */
+    printf("\n============================================================\n");
+    printf("            THREE ADDRESS CODE (TAC) OUTPUT                 \n");
+    printf("============================================================\n");
+    TACList *tac = tac_generate(ast_root);
+    if (tac) {
+        tac_print(tac);
+        tac_list_free(tac);
+    }
+    printf("============================================================\n");
 
     /* Memory Cleanup */
     symtab_free(st);

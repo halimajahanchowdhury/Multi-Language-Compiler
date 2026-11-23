@@ -69,4 +69,8 @@ void tac_fprint(FILE *out, const TACList *list);
 char *tac_gen_expr(TACList *list, ASTNode *expr);
 void tac_gen_assign(TACList *list, ASTNode *assign);
 
+/* Code Generation for Control Flow, Statements, and Full Program */
+void tac_gen_stmt(TACList *list, ASTNode *stmt);
+TACList *tac_generate(ASTNode *root);
+
 #endif /* TAC_H */
