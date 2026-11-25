@@ -102,4 +102,7 @@ void ast_free(ASTNode *node);
 /* Visualization */
 void ast_print(const ASTNode *node, int indent);
 
+/* Optimization: Constant Folding (Bonus) */
+ASTNode *ast_constant_fold(ASTNode *node);
+
 #endif /* AST_H */

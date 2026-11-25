@@ -163,6 +163,9 @@ int main(int argc, char **argv) {
 
     printf("[Validation Succeeded] Front-end parsing and semantic validation passed with 0 errors.\n");
 
+    /* Optimization Phase: Constant Folding (Section 14 Bonus) */
+    ast_root = ast_constant_fold(ast_root);
+
     /* Phase 4: Intermediate Code Generation (Three Address Code) */
     printf("\n============================================================\n");
     printf("            THREE ADDRESS CODE (TAC) OUTPUT                 \n");
@@ -183,3 +186,4 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
