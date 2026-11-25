@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Language Compiler</title>
+    <!-- Sleek & Formal Google Fonts: Inter (UI) & JetBrains Mono (Code) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* Light Theme (Default) */
+        :root[data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-panel: #f1f5f9;
+            --border-color: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --editor-bg: #ffffff;
+            --editor-text: #1e293b;
+            --line-num-bg: #f8fafc;
+            --line-num-text: #94a3b8;
+            --accent-blue: #2563eb;
+            --accent-hover: #1d4ed8;
+            --accent-green: #059669;
+            --accent-red: #dc2626;
+            --btn-clear-bg: #f1f5f9;
+            --btn-clear-border: #cbd5e1;
+            --btn-clear-text: #334155;
+            --active-tab-bg: #ffffff;
+            --active-tab-text: #0f172a;
+            --output-bg: #f8fafc;
+            --tac-color: #1d4ed8;
+            --ast-color: #6d28d9;
+            --symtab-color: #047857;
+            --banner-err-bg: #fef2f2;
+            --banner-err-border: #ef4444;
+            --banner-err-text: #b91c1c;
+            --banner-ok-bg: #ecfdf5;
+            --banner-ok-border: #10b981;
+            --banner-ok-text: #047857;
+        }
+
+        /* Dark Theme */
+        :root[data-theme="dark"] {
+            --bg-primary: #0f141c;
+            --bg-secondary: #181f2a;
+            --bg-panel: #1e2636;
+            --border-color: #2b3648;
+            --text-main: #e6edf3;
+            --text-muted: #8b949e;
+            --editor-bg: #0f141c;
+            --editor-text: #e2e8f0;
+            --line-num-bg: #181f2a;
+            --line-num-text: #4b5563;
+            --accent-blue: #3b82f6;
+            --accent-hover: #2563eb;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --btn-clear-bg: #1e2636;
+            --btn-clear-border: #334155;
+            --btn-clear-text: #cbd5e1;
+            --active-tab-bg: #1e2636;
+            --active-tab-text: #ffffff;
+            --output-bg: #0f141c;
+            --tac-color: #60a5fa;
+            --ast-color: #a78bfa;
+            --symtab-color: #34d399;
+            --banner-err-bg: rgba(239, 68, 68, 0.12);
+            --banner-err-border: #ef4444;
+            --banner-err-text: #f87171;
+            --banner-ok-bg: rgba(16, 185, 129, 0.12);
+            --banner-ok-border: #10b981;
+            --banner-ok-text: #34d399;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        /* Top Header */
+        header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 52px;
+            flex-shrink: 0;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 26px;
+            height: 26px;
+            color: var(--accent-blue);
+        }
+
+        .brand-title {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+
+        .brand-badge {
+            font-size: 11px;
+            background: var(--bg-panel);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .theme-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .theme-toggle-btn:hover {
+            border-color: var(--accent-blue);
+        }
+
+        /* Workspace Grid */
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            flex: 1;
+            height: calc(100vh - 52px - 26px);
+            overflow: hidden;
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .panel:last-child {
+            border-right: none;
+        }
+
+        /* Panel Headers */
+        .panel-header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 44px;
+            flex-shrink: 0;
+        }
+
+        .code-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-tab {
+            font-family: var(--font-code, monospace);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            padding: 4px 10px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .lang-select-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        select.lang-select {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select.lang-select:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .code-header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Buttons */
+        .btn-clear {
+            background-color: var(--btn-clear-bg);
+            color: var(--btn-clear-text);
+            border: 1px solid var(--btn-clear-border);
+            padding: 5px 14px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-clear:hover {
+            background-color: var(--border-color);
+        }
+
+        .btn-run {
+            background-color: var(--accent-blue);
+            color: #ffffff;
+            border: none;
+            padding: 5px 18px;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-run:hover {
+            background-color: var(--accent-hover);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+        }
+
+        /* Output Tabs */
+        .tab-group {
+            display: flex;
+            gap: 4px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background: rgba(125, 125, 125, 0.08);
+        }
+
+        .tab-btn.active {
+            color: var(--active-tab-text);
+            background: var(--active-tab-bg);
+            border: 1px solid var(--border-color);
+            border-bottom: 2px solid var(--accent-blue);
+        }
+
+        /* Code Editor */
+        .editor-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+            background-color: var(--editor-bg);
+            overflow: hidden;
+        }
+
+        .line-numbers {
+            width: 44px;
+            background-color: var(--line-num-bg);
+            color: var(--line-num-text);
+            font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+            font-size: 13px;
+            line-height: 22px;
+            padding: 12px 6px;
+            text-align: right;
+            user-select: none;
+            border-right: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        textarea.code-editor {
+            flex: 1;
+            background: transparent;
+            color: var(--editor-text);
+            font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+            font-size: 13px;
+            line-height: 22px;
+            padding: 12px 16px;
+            border: none;
+            outline: none;
+            resize: none;
+            white-space: pre;
+            tab-size: 4;
+            overflow: auto;
+        }
+
+        /* Output View */
+        .output-container {
+            flex: 1;
+            padding: 16px;
+            font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+            font-size: 13px;
+            line-height: 22px;
+            overflow-y: auto;
+            background-color: var(--output-bg);
+        }
+
+        pre {
+            font-family: inherit;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .tac-output {
+            color: var(--tac-color);
+        }
+
+        .ast-output {
+            color: var(--ast-color);
+        }
+
+        .symtab-output {
+            color: var(--symtab-color);
+        }
+
+        .error-banner {
+            background-color: var(--banner-err-bg);
+            border-left: 4px solid var(--banner-err-border);
+            color: var(--banner-err-text);
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            border-radius: 0 4px 4px 0;
+            font-size: 13px;
+        }
+
+        .success-banner {
+            background-color: var(--banner-ok-bg);
+            border-left: 4px solid var(--banner-ok-border);
+            color: var(--banner-ok-text);
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            border-radius: 0 4px 4px 0;
+            font-size: 13px;
+        }
+
+        /* Footer */
+        footer {
+            height: 26px;
+            background-color: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-size: 11px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: var(--accent-green);
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="brand-container">
+            <svg class="brand-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/>
+            </svg>
+            <span class="brand-title">Multi-Language Compiler</span>
+            <span class="brand-badge">Flex & Bison</span>
+        </div>
+
+        <div class="header-actions">
+            <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeBtn">
+                <svg id="themeIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <span id="themeText">Dark Mode</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Workspace -->
+    <div class="workspace">
+        <!-- Editor Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="code-header-left">
+                    <div class="file-tab">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                            <polyline points="13 2 13 9 20 9"></polyline>
+                        </svg>
+                        <span id="fileNameDisplay">main.c</span>
+                    </div>
+
+                    <div class="lang-select-wrapper">
+                        <select id="langSelect" class="lang-select" onchange="onLanguageChange()">
+                            <option value="c" selected>C Language</option>
+                            <option value="cpp">C++ Language</option>
+                            <option value="java">Java Language</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="code-header-right">
+                    <button class="btn-clear" onclick="clearCode()">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        Clear
+                    </button>
+
+                    <button class="btn-run" onclick="runCompiler()">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        Run
+                    </button>
+                </div>
+            </div>
+
+            <div class="editor-container">
+                <div class="line-numbers" id="lineNumbers">1</div>
+                <textarea id="codeEditor" class="code-editor" spellcheck="false" oninput="updateLineNumbers()"></textarea>
+            </div>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="tab-group">
+                    <button class="tab-btn active" onclick="switchTab('tac')">Three Address Code</button>
+                    <button class="tab-btn" onclick="switchTab('ast')">Abstract Syntax Tree</button>
+                    <button class="tab-btn" onclick="switchTab('symtab')">Symbol Table</button>
+                    <button class="tab-btn" onclick="switchTab('raw')">Full Terminal Output</button>
+                </div>
+            </div>
+
+            <div class="output-container" id="outputContainer">
+                <div id="statusBanner"></div>
+                <pre id="outputView" class="tac-output">// Click "Run" to compile and view Three Address Code</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Footer -->
+    <footer>
+        <div>
+            <span class="status-dot"></span>
+            <span>Compiler Ready (MinGW GCC + Flex + Bison)</span>
+        </div>
+        <div>
+            <span>Press Ctrl+Enter to Run &bull; Metropolitan University, Bangladesh</span>
+        </div>
+    </footer>
+
+    <script>
+        const samples = {
+            c: `#include <stdio.h>
+
+int main() {
+    int n;
+    int sum;
+    int i;
+
+    n = 5;
+    sum = 0;
+    i = 1;
+
+    while (i <= n) {
+        sum = sum + i;
+        i++;
+    }
+
+    if (sum > 10) {
+        printf("Sum is greater than 10\\n");
+    } else {
+        printf("Sum is small\\n");
+    }
+
+    return 0;
+}`,
+            cpp: `#include <iostream>
+using namespace std;
+
+int main() {
+    int a;
+    int b;
+    bool isGreater;
+
+    a = 15;
+    b = 7;
+    isGreater = (a > b);
+
+    if (isGreater == true) {
+        cout << "a is greater than b" << endl;
+    } else {
+        cout << "b is greater or equal" << endl;
+    }
+
+    return 0;
+}`,
+            java: `public class Main {
+    public static void main(String[] args) {
+        int x;
+        int y;
+        int result;
+
+        x = 10;
+        y = 20;
+        result = x * y + 5;
+
+        if (result >= 100) {
+            System.out.println("Result exceeds threshold");
+        } else {
+            System.out.println("Result within range");
+        }
+    }
+}`,
+            mc: `int x;
+int y;
+bool flag;
+
+x = 10;
+y = 0;
+flag = true;
+
+while (x > 0) {
+    y = y + x;
+    x = x - 1;
+}
+
+if (flag == true) {
+    print y;
+} else {
+    print x;
+}`
+        };
+
+        let currentResult = {
+            tac: "",
+            ast: "",
+            symtab: "",
+            raw: "",
+            success: true,
+            errors: ""
+        };
+
+        let activeTab = "tac";
+
+        function updateLineNumbers() {
+            const editor = document.getElementById("codeEditor");
+            const lines = editor.value.split("\n").length;
+            const lineNumbersDiv = document.getElementById("lineNumbers");
+            lineNumbersDiv.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join("<br>");
+        }
+
+        function onLanguageChange() {
+            const lang = document.getElementById("langSelect").value;
+            const extMap = { c: "main.c", cpp: "main.cpp", java: "Main.java" };
+            document.getElementById("fileNameDisplay").innerText = extMap[lang] || "main.c";
+            
+            // Auto load sample for selected language
+            const editor = document.getElementById("codeEditor");
+            editor.value = samples[lang] || samples.c;
+            updateLineNumbers();
+        }
+
+        function clearCode() {
+            const editor = document.getElementById("codeEditor");
+            editor.value = "";
+            updateLineNumbers();
+            editor.focus();
+        }
+
+        function switchTab(tab) {
+            activeTab = tab;
+            document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+            event.target.classList.add("active");
+
+            const outView = document.getElementById("outputView");
+            outView.className = "";
+
+            if (tab === "tac") {
+                outView.className = "tac-output";
+                outView.innerText = currentResult.tac || "// No Three Address Code generated yet";
+            } else if (tab === "ast") {
+                outView.className = "ast-output";
+                outView.innerText = currentResult.ast || "// No AST available";
+            } else if (tab === "symtab") {
+                outView.className = "symtab-output";
+                outView.innerText = currentResult.symtab || "// No Symbol Table snapshot available";
+            } else if (tab === "raw") {
+                outView.innerText = currentResult.raw || "// No output yet";
+            }
+        }
+
+        async function runCompiler() {
+            const lang = document.getElementById("langSelect").value;
+            const code = document.getElementById("codeEditor").value;
+            const banner = document.getElementById("statusBanner");
+            const outView = document.getElementById("outputView");
+
+            if (!code.trim()) {
+                banner.innerHTML = `<div class="error-banner">Editor is empty. Write or paste code before clicking Run.</div>`;
+                return;
+            }
+
+            banner.innerHTML = `<div class="success-banner" style="color: var(--accent-blue);">Compiling and generating Three Address Code...</div>`;
+
+            try {
+                const response = await fetch("/compile", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ lang, code })
+                });
+
+                const data = await response.json();
+                currentResult = data;
+
+                if (data.success) {
+                    banner.innerHTML = `<div class="success-banner">Compilation Succeeded &bull; Front-End & TAC Verified (0 Errors)</div>`;
+                } else {
+                    banner.innerHTML = `<div class="error-banner">Compilation Diagnostics: Errors Encountered<br>${escapeHtml(data.errors || "Syntax or Semantic Error")}</div>`;
+                }
+
+                if (activeTab === "tac") {
+                    outView.className = "tac-output";
+                    outView.innerText = data.tac || (data.success ? "// TAC Empty" : "// TAC generation halted due to errors");
+                } else if (activeTab === "ast") {
+                    outView.className = "ast-output";
+                    outView.innerText = data.ast || "// AST unavailable";
+                } else if (activeTab === "symtab") {
+                    outView.className = "symtab-output";
+                    outView.innerText = data.symtab || "// Symbol Table unavailable";
+                } else {
+                    outView.innerText = data.raw;
+                }
+
+            } catch (err) {
+                banner.innerHTML = `<div class="error-banner">Server Error: ${err.message}</div>`;
+            }
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute("data-theme") || "light";
+            const target = current === "light" ? "dark" : "light";
+            html.setAttribute("data-theme", target);
+
+            const themeText = document.getElementById("themeText");
+            const themeIcon = document.getElementById("themeIcon");
+
+            if (target === "dark") {
+                themeText.innerText = "Light Mode";
+                themeIcon.innerHTML = `<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`;
+            } else {
+                themeText.innerText = "Dark Mode";
+                themeIcon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+            }
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // Support Tab key & Ctrl+Enter shortcut
+        document.getElementById("codeEditor").addEventListener("keydown", function(e) {
+            if (e.key === "Tab") {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+                updateLineNumbers();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                runCompiler();
+            }
+        });
+
+        // Initialize default sample and line numbers
+        onLanguageChange();
+    </script>
+</body>
+</html>
