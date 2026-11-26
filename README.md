@@ -1,117 +1,133 @@
-# Multi-Language Compiler (C, C++, Java)
+# Multi-Language Compiler
 
-A modular Compiler Front-End with Intermediate Code Generation (Three Address Code) designed and implemented using **Flex (Lexical Analyzer)** and **Bison (Parser Generator)** in C for the Compiler Construction Laboratory at Metropolitan University, Bangladesh.
-
----
-
-## 📌 Project Overview
-
-This compiler processes programs written in **C**, **C++**, and **Java**, supporting core imperative language constructs:
-- **Language Mode Selection**: Choose between **C**, **C++**, and **Java** via interactive CLI or command-line flags.
-- **Lexical Analysis (Flex)**: Tokenizes keywords, identifiers, constants, arithmetic/relational/logical operators, delimiters, and discards whitespace and single/block comments.
-- **Syntax Analysis (Bison)**: Validates Context-Free Grammar (CFG) with robust operator precedence and syntax error diagnostics.
-- **Abstract Syntax Tree (AST)**: Builds an in-memory hierarchical syntax tree with readable text-based indented visualization and Graphviz export.
-- **Scoped Symbol Table**: Implements nested block scope resolution (`{ ... }`), tracking identifiers, data types, and declaration line numbers.
-- **Semantic Analysis**: Enforces type compatibility, detects undeclared variables, prevents scope violations, and catches duplicate declarations.
-- **Intermediate Code Generation**: Emits low-level **Three Address Code (TAC)** using temporaries (`t1`, `t2`, ...) and jump labels (`L1`, `L2`, ...) for control flow.
+A modular compiler front-end with intermediate code generation implemented in C using Flex and Bison. This system analyzes and translates core imperative programs written in C, C++, and Java into Three Address Code (TAC). Developed for the Compiler Construction Laboratory at Metropolitan University, Bangladesh.
 
 ---
 
-## 🛠️ Compiler Architecture & Pipeline
+## Overview
+
+The compiler processes standard constructs across C, C++, and Java, verifying source syntax and semantics before emitting low-level intermediate code:
+
+- **Language Support**: Supports core subsets of C, C++, and Java, including distinct I/O mechanisms (`printf`, `cout`/`cin`, and `System.out.println`) and boilerplate wrappers.
+- **Lexical Analysis (Flex)**: Tokenizes language keywords, identifiers, constants, arithmetic, relational, and logical operators while filtering out comments and whitespace.
+- **Syntax Analysis (Bison)**: Implements an LALR(1) Context-Free Grammar with defined precedence rules and syntax error recovery.
+- **Abstract Syntax Tree (AST)**: Constructs an in-memory tree representation of the input program and provides hierarchical text-based visualization.
+- **Symbol Table Management**: Enforces lexical scoping rules using a scoped symbol table that tracks identifier types, depths, and line declarations.
+- **Semantic Analysis**: Detects undeclared variables, duplicate declarations within the same scope, and type mismatches in expressions and control flow conditions.
+- **Intermediate Code Generation**: Emits linear Three Address Code (TAC) with sequential temporary variables and jump labels for conditional and iterative control flow.
+
+---
+
+## Compiler Pipeline
 
 ```
- Source Code (.c / .cpp / .java / .mc)
-                  │
-                  ▼
-         [ Lexical Analyzer ]  (Flex - lexer.l)
-                  │  Token Stream
-                  ▼
-         [  Syntax Analyzer ]  (Bison - parser.y)
-                  │  Parse Tree Actions
-                  ▼
-       [ Abstract Syntax Tree ]  (AST - ast.c)
-                  │  Hierarchical Tree
-                  ▼
-      [ Scoped Symbol Table ]  (symtab.c)
-                  │  Scope & Identifier Metadata
-                  ▼
-      [  Semantic Analyzer  ]  (semantic.c, typecheck.c)
-                  │  Type Checking & Scope Validation
-                  ▼
-    [ Three Address Code (TAC) ]  (tac.c)
-                  │
-                  ▼
-      Linear TAC Output / Diagnostic Errors
+ Source Program (.c / .cpp / .java)
+                 │
+                 ▼
+       [ Lexical Analyzer ]      Flex (lexer.l)
+                 │  Tokens
+                 ▼
+       [  Syntax Analyzer ]      Bison (parser.y)
+                 │  Parse Actions
+                 ▼
+     [ Abstract Syntax Tree ]    AST (ast.c)
+                 │  Hierarchy
+                 ▼
+     [ Scoped Symbol Table ]     Symbol Table (symtab.c)
+                 │  Scope Resolution
+                 ▼
+     [   Semantic Checks   ]     Type Checker (semantic.c, typecheck.c)
+                 │  Validated AST
+                 ▼
+     [    TAC Generator    ]     Code Generator (tac.c, tac_expr.c, tac_stmt.c)
+                 │
+                 ▼
+     Three Address Code Output / Error Diagnostics
 ```
 
 ---
 
-## 📂 Directory Structure
+## Project Structure
 
 ```text
 Multi-Language-Compiler/
-├── docs/                      # Architectural designs, CFG specifications, and reports
+├── docs/                      # Language specifications and design documents
 ├── src/
-│   ├── lexer/                 # Flex specification (lexer.l) and token definitions
-│   ├── parser/                # Bison grammar (parser.y) and CFG rules
-│   ├── ast/                   # AST node structures and tree printing utilities
-│   ├── symbol_table/          # Scoped symbol table and hash table operations
-│   ├── semantic/              # Type checking and semantic error detection
-│   ├── tac/                   # Three Address Code data structures and generator
-│   └── main.c                 # Compiler entry point, language selector, and CLI driver
+│   ├── lexer/                 # Flex specification (lexer.l) and token definitions (tokens.h)
+│   ├── parser/                # Bison grammar (parser.y)
+│   ├── ast/                   # AST node structures, constructors, printer, and optimization
+│   ├── symbol_table/          # Symbol table implementation and scope management
+│   ├── semantic/              # Scope checking and type validation logic
+│   ├── tac/                   # Three Address Code data structures and emitters
+│   └── main.c                 # Compiler entry point and CLI pipeline driver
+├── web/
+│   └── index.html             # Local Web IDE interface
+├── server.py                  # Local Python server for running the web compiler
 ├── tests/
-│   ├── valid/                 # Valid test programs for C, C++, and Java
-│   └── invalid/               # Test cases with deliberate lexical, syntax, and semantic errors
-├── examples/                  # Demo input programs and sample TAC outputs
-├── Makefile                   # Build automation rules
+│   ├── valid/                 # Valid programs for nested scopes and arithmetic
+│   └── invalid/               # Test cases for lexical, syntax, and semantic errors
+├── examples/                  # Sample C, C++, Java, and specification test files
+├── Makefile                   # Build automation configuration
 └── README.md                  # Project documentation
 ```
 
 ---
 
-## 🚀 Building and Running
+## Build Instructions
 
 ### Prerequisites
-- **GCC** (GNU Compiler Collection / MinGW)
-- **Flex** (Fast Lexical Analyzer Generator)
-- **Bison** (GNU Parser Generator)
-- **Make** (GNU Make)
+- GCC (GNU Compiler Collection / MinGW)
+- Flex (Fast Lexical Analyzer Generator)
+- Bison (GNU Parser Generator)
+- GNU Make
 
-### Build
-To build the compiler executable:
+### Compilation
+To compile the project from source:
 ```bash
 make
 ```
 
-### Execution
-Run the compiler interactively (prompts for language selection):
-```bash
-./compiler
-```
-
-Or pass the target language and input file via command-line:
-```bash
-# Compile a C source file:
-./compiler --lang=c examples/sample_c.c
-
-# Compile a C++ source file:
-./compiler --lang=cpp examples/sample_cpp.cpp
-
-# Compile a Java source file:
-./compiler --lang=java examples/sample_java.java
-```
-
-### Cleaning Build Artifacts
+To clean generated binaries and intermediate build files:
 ```bash
 make clean
 ```
 
 ---
 
-## 👥 Contributors
+## Usage
+
+### Command-Line Interface
+The compiler accepts the source file path and an optional language target flag:
+
+```bash
+# Compile a C source file:
+./compiler.exe --lang=c examples/sample_c.c
+
+# Compile a C++ source file:
+./compiler.exe --lang=cpp examples/sample_cpp.cpp
+
+# Compile a Java source file:
+./compiler.exe --lang=java examples/sample_java.java
+```
+
+If executed without arguments, the compiler enters interactive mode:
+```bash
+./compiler.exe
+```
+
+### Local Web Interface
+To run the compiler through a browser-based interface:
+```bash
+python server.py
+```
+This starts a local server on port 5000 and opens `http://localhost:5000`, providing an editor, language selection, and side-by-side visualization of TAC, AST, Symbol Table, and diagnostics.
+
+---
+
+## Authors
 
 - **Halima Jahan Chowdhury** ([@halimajahanchowdhury](https://github.com/halimajahanchowdhury))
 - **Fatema Jannat Ema** ([@fatemajannatema](https://github.com/fatemajannatema))
 
-**Department of Computer Science and Engineering**  
-**Metropolitan University, Bangladesh**
+Department of Computer Science and Engineering  
+Metropolitan University, Bangladesh
