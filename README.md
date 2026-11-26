@@ -23,34 +23,38 @@ The compiler implements a full front-end pipeline that verifies lexical, syntact
 
 ---
 
-## 2. Compiler Pipeline Architecture
+## 2. Compiler Pipeline Architecture (The 6 Phases)
 
 ```text
- Source Program (.c / .cpp / .java / .mc)
-                    │
-                    ▼
-          [ Lexical Analyzer ]          Flex (src/lexer/lexer.l)
-                    │  Token Stream
-                    ▼
-          [  Syntax Analyzer ]          Bison (src/parser/parser.y)
-                    │  Parse Tree Actions
-                    ▼
-        [ Abstract Syntax Tree ]        AST (src/ast/ast.c)
-                    │
-                    ▼
-        [ Scoped Symbol Table ]         Symbol Table (src/symbol_table/symtab.c)
-                    │  Scope & Type Resolution
-                    ▼
-        [   Semantic Checker  ]         Semantic Engine (src/semantic/)
-                    │  Validated AST
-                    ▼
-        [   Constant Folding  ]         AST Optimizer (src/ast/ast_optimize.c)
-                    │  Optimized AST
-                    ▼
-        [    TAC Generator    ]         Intermediate Code (src/tac/)
-                    │
-                    ▼
-        Three Address Code / Diagnostic Output
+Source Program (.c / .cpp / .java)
+                 │
+                 ▼
+      [ Phase 1: Lexer ]          Flex Lexical Analyzer (Tokens Table)
+                 │  Token Stream
+                 ▼
+      [ Phase 2: Parser ]         Bison Context-Free Grammar (LALR(1))
+                 │  Parse Actions
+                 ▼
+      [ Phase 2: AST ]            Abstract Syntax Tree (src/ast/ast.c)
+                 │
+                 ▼
+      [ Phase 3: SymTab ]         Scoped Symbol Table & djb2 Hash Table
+                 │  Scope & Type Resolution
+                 ▼
+      [ Phase 3: Semantic ]       Semantic Analyzer & Type Compatibility
+                 │  Validated AST
+                 ▼
+      [ Phase 4: TAC ]            Intermediate Code (Three Address Code)
+                 │  Quadruples
+                 ▼
+      [ Phase 5: Optimize ]       Compile-Time Constant Folding
+                 │  Folded AST & IR
+                 ▼
+      [ Phase 6: Code Gen ]       Target Code Generation:
+                 │                  • C / C++ ──> x86 Assembly (Intel syntax)
+                 │                  • Java    ──> JVM Bytecode (javap -c)
+                 ▼
+      [ Program Execution ]       Native Execution Console (Program Output)
 ```
 
 ### Architectural Boundaries
@@ -85,7 +89,7 @@ All mandatory modules (Sections 4 and 5) and two bonus features (Section 14) are
 | Semantic Analyzer | `src/semantic/` | Completed | Validates undeclared variables, prevents scope leaks, detects duplicate declarations, and enforces type compatibility rules. |
 | Intermediate Code (TAC) | `src/tac/` | Completed | Linear quadruple data structures emitting expressions, conditional branches (`if_false`), unconditional jumps (`goto`), and labels. |
 | Constant Folding (Bonus) | `src/ast/ast_optimize.c` | Completed | Traverses AST to evaluate constant arithmetic, relational, and boolean operations at compile time. |
-| Web Compiler IDE (Bonus) | `web/`, `server.py` | Completed | Local browser interface hosted on port 5000 with C, C++, and Java mode selection, light/dark themes, and real-time execution. |
+| Web Compiler IDE (Bonus) | `frontend/`, `server.py` | Completed | Local browser interface hosted on port 5000 with C, C++, and Java mode selection, light/dark themes, 6-phase tabs, and native execution. |
 
 ---
 
@@ -93,40 +97,31 @@ All mandatory modules (Sections 4 and 5) and two bonus features (Section 14) are
 
 ```text
 Multi-Language-Compiler/
-├── docs/                      # Specification references and architectural notes
-├── src/
-│   ├── lexer/
-│   │   ├── tokens.h           # Shared token enumeration and type definitions
-│   │   └── lexer.l            # Flex regular expression rules and token actions
-│   ├── parser/
-│   │   └── parser.y           # Bison Context-Free Grammar and AST binding
-│   ├── ast/
-│   │   ├── ast.h              # AST node declarations and constructor prototypes
-│   │   ├── ast.c              # AST node allocation and deallocation logic
-│   │   ├── ast_print.c        # Text-based indented tree visualization
-│   │   └── ast_optimize.c     # Compile-time constant folding optimization
-│   ├── symbol_table/
-│   │   ├── symtab.h           # Scope stack and symbol entry declarations
-│   │   └── symtab.c           # Hash table, scope traversal, and lookup operations
-│   ├── semantic/
-│   │   ├── semantic.h         # Semantic analysis prototypes and error counters
-│   │   ├── semantic.c         # AST traversal for declaration and scope verification
-│   │   └── typecheck.c        # Type compatibility rules for assignments and operators
-│   ├── tac/
-│   │   ├── tac.h              # Three Address Code data structures and prototypes
-│   │   ├── tac.c              # Instruction allocation, temp/label generators, and printer
-│   │   ├── tac_expr.c         # Expression linearization to temporaries
-│   │   └── tac_stmt.c         # Control flow linearization (if-else, while, for)
-│   └── main.c                 # Driver program with language selector and CLI interface
-├── web/
-│   └── index.html             # Single-page browser IDE interface
-├── server.py                  # Standard library Python server for local hosting
-├── tests/
-│   ├── valid/                 # Valid test programs for arithmetic and nested scopes
-│   └── invalid/               # Negative tests for lexical, syntax, and semantic errors
-├── examples/                  # Representative sample inputs for C, C++, and Java
-├── Makefile                   # Build configuration
-└── README.md                  # Project documentation
+├── C_Compiler/                # Dedicated C compiler (lexer, parser, driver, examples)
+├── CPP_Compiler/              # Dedicated C++ compiler (streams, namespaces, driver, examples)
+├── Java_Compiler/             # Dedicated Java compiler (classes, methods, driver, examples)
+├── docs/                      # Formal 6-phase specifications and grammar documentation
+│   ├── pipeline.md            # Complete 6-phase pipeline specification
+│   ├── grammar.md             # EBNF grammar specifications for C, C++, and Java
+│   ├── ast.md                 # AST node classification and hierarchy
+│   ├── tac.md                 # Three-Address Code instruction set specification
+│   └── target_codegen.md      # x86 Assembly and JVM Bytecode generation specification
+├── src/                       # Shared compiler core engine
+│   ├── lexer/                 # Shared Flex lexer specification and tokens header
+│   ├── parser/                # Shared Bison LALR(1) Context-Free Grammar
+│   ├── ast/                   # AST node hierarchy, constructors, and constant folding
+│   ├── symbol_table/          # Scoped symbol table and djb2 hash table
+│   ├── semantic/              # Scope checker and type compatibility validator
+│   ├── tac/                   # Three-Address Code quadruples and label manager
+│   └── main.c                 # Unified compiler driver
+├── frontend/                  # Browser-based IDE with 6-phase tabs and Program Output
+│   └── index.html             # Light/dark mode web interface
+├── server.py                  # Local Python server handling compilation and native runs
+├── tests/                     # Validation and regression test suites
+│   ├── valid/                 # Positive test cases
+│   └── invalid/               # Negative test cases (lexical, syntax, semantic)
+├── Makefile                   # Master build script compiling all subcompilers
+└── README.md                  # Comprehensive project documentation
 ```
 
 ---
