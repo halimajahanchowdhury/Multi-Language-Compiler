@@ -109,7 +109,11 @@ void tac_fprint(FILE *out, const TACList *list) {
     for (TACInstr *i = list->head; i != NULL; i = i->next) {
         switch (i->op) {
             case TAC_LABEL:
-                fprintf(out, "%s:\n", i->result);
+                if (i->result && strcmp(i->result, "end") == 0) {
+                    fprintf(out, "end\n");
+                } else {
+                    fprintf(out, "%s:\n", i->result);
+                }
                 break;
 
             case TAC_GOTO:
