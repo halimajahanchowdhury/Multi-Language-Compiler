@@ -636,6 +636,9 @@ if (flag == true) {
             const lines = editor.value.split("\n").length;
             const lineNumbersDiv = document.getElementById("lineNumbers");
             lineNumbersDiv.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join("<br>");
+            if (typeof syncEditorScroll === "function") {
+                syncEditorScroll();
+            }
         }
 
         function onLanguageChange() {
@@ -756,6 +759,13 @@ if (flag == true) {
         }
 
         codeEditorEl.addEventListener("scroll", syncEditorScroll);
+        codeEditorEl.addEventListener("input", updateLineNumbers);
+        codeEditorEl.addEventListener("paste", function() {
+            setTimeout(updateLineNumbers, 10);
+        });
+        codeEditorEl.addEventListener("cut", function() {
+            setTimeout(updateLineNumbers, 10);
+        });
 
         codeEditorEl.addEventListener("keydown", function(e) {
             if (e.key === "Tab") {
