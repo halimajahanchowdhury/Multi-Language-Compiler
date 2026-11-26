@@ -35,13 +35,17 @@ typedef struct Symbol {
 typedef struct Scope {
     int level;
     Symbol *buckets[HASH_SIZE];
-    Symbol *symbol_list;        /* Linked list of all symbols in this scope level */
+    Symbol *symbol_list;        /* Linked list of all symbols in this scope level (head) */
+    Symbol *symbol_tail;        /* Tail pointer for insertion order */
     struct Scope *parent;       /* Enclosing parent scope */
+    struct Scope *all_next;     /* Chronological list of all created scopes */
 } Scope;
 
 /* Top-level Symbol Table manager */
 typedef struct SymbolTable {
     Scope *current_scope;
+    Scope *all_scopes_head;
+    Scope *all_scopes_tail;
     int current_level;
     int total_scopes_created;
 } SymbolTable;

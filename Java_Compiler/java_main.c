@@ -58,26 +58,33 @@ static void generate_jvm_bytecode(const char *input_path) {
     printf("\n============================================================\n");
     printf("          PHASE 6: CODE GENERATION (JVM BYTECODE)           \n");
     printf("============================================================\n");
+    fflush(stdout);
 
     char cmd[1024];
     /* Extract directory and class name */
-    const char *slash = strrchr(input_path, '\\');
-    if (!slash) slash = strrchr(input_path, '/');
+    const char *slash1 = strrchr(input_path, '\\');
+    const char *slash2 = strrchr(input_path, '/');
+    const char *slash = (slash1 > slash2) ? slash1 : slash2;
     const char *filename = slash ? (slash + 1) : input_path;
     char classname[128];
-    strncpy(classname, filename, sizeof(classname));
+    strncpy(classname, filename, sizeof(classname) - 1);
+    classname[sizeof(classname) - 1] = '\0';
     char *dot = strrchr(classname, '.');
     if (dot) *dot = '\0';
 
     char dir[512] = ".";
     if (slash) {
         size_t len = slash - input_path;
+        if (len >= sizeof(dir)) len = sizeof(dir) - 1;
         strncpy(dir, input_path, len);
         dir[len] = '\0';
     }
 
-    snprintf(cmd, sizeof(cmd), "javac -d \"%s\" \"%s\" 2>nul && javap -c -cp \"%s\" %s 2>nul",
-             dir, input_path, dir, classname);
+    char bc_path[512];
+    snprintf(bc_path, sizeof(bc_path), "%s/%s.bc", dir, classname);
+
+    snprintf(cmd, sizeof(cmd), "javac -d \"%s\" \"%s\" 2>nul && javap -c -cp \"%s\" %s > \"%s\" 2>nul",
+             dir, input_path, dir, classname, bc_path);
     
     int ret = system(cmd);
 
@@ -85,6 +92,20 @@ static void generate_jvm_bytecode(const char *input_path) {
     char class_file[512];
     snprintf(class_file, sizeof(class_file), "%s/%s.class", dir, classname);
     remove(class_file);
+
+    if (ret == 0) {
+        FILE *bc_file = fopen(bc_path, "r");
+        if (bc_file) {
+            char buf[512];
+            while (fgets(buf, sizeof(buf), bc_file)) {
+                printf("%s", buf);
+            }
+            fclose(bc_file);
+            remove(bc_path);
+            return;
+        }
+    }
+    remove(bc_path);
 
     if (ret != 0) {
         printf("Compiled from \"%s\"\n", filename);
@@ -105,6 +126,7 @@ static void generate_jvm_bytecode(const char *input_path) {
 }
 
 int main(int argc, char **argv) {
+    setvbuf(stdout, NULL, _IONBF, 0);
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <source_file.java>\n", argv[0]);
         return 1;

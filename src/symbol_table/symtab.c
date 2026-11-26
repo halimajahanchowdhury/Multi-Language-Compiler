@@ -62,16 +62,18 @@ SymbolTable *symtab_create(void) {
     st->current_level = 0;
     st->total_scopes_created = 1;
     st->current_scope = scope_create(0, NULL); /* Global scope level 0 */
+    st->all_scopes_head = st->current_scope;
+    st->all_scopes_tail = st->current_scope;
     return st;
 }
 
 void symtab_free(SymbolTable *st) {
     if (!st) return;
-    Scope *curr = st->current_scope;
-    while (curr) {
-        Scope *parent = curr->parent;
-        scope_free(curr);
-        curr = parent;
+    Scope *s = st->all_scopes_head;
+    while (s) {
+        Scope *next = s->all_next;
+        scope_free(s);
+        s = next;
     }
     free(st);
 }
@@ -82,6 +84,13 @@ void symtab_enter_scope(SymbolTable *st) {
     st->total_scopes_created++;
     Scope *new_scope = scope_create(st->current_level, st->current_scope);
     st->current_scope = new_scope;
+    if (st->all_scopes_tail) {
+        st->all_scopes_tail->all_next = new_scope;
+        st->all_scopes_tail = new_scope;
+    } else {
+        st->all_scopes_head = new_scope;
+        st->all_scopes_tail = new_scope;
+    }
 }
 
 void symtab_exit_scope(SymbolTable *st) {
@@ -93,7 +102,7 @@ void symtab_exit_scope(SymbolTable *st) {
     Scope *old_scope = st->current_scope;
     st->current_scope = old_scope->parent;
     st->current_level--;
-    scope_free(old_scope);
+    /* Scopes are retained in st->all_scopes for full symbol table snapshot */
 }
 
 int symtab_get_current_scope_level(SymbolTable *st) {
@@ -125,9 +134,14 @@ Symbol *symtab_insert(SymbolTable *st, const char *name, DataType type, int line
     sym->next = st->current_scope->buckets[idx];
     st->current_scope->buckets[idx] = sym;
 
-    /* Add to scope symbol chain */
-    sym->scope_next = st->current_scope->symbol_list;
-    st->current_scope->symbol_list = sym;
+    /* Add to scope symbol chain in declaration order */
+    if (!st->current_scope->symbol_list) {
+        st->current_scope->symbol_list = sym;
+        st->current_scope->symbol_tail = sym;
+    } else {
+        st->current_scope->symbol_tail->scope_next = sym;
+        st->current_scope->symbol_tail = sym;
+    }
 
     return sym;
 }
@@ -167,7 +181,7 @@ void symtab_print(SymbolTable *st) {
     printf("%-15s | %-10s | %-6s | %-12s\n", "Name", "Type", "Scope", "Declared Line");
     printf("------------------------------------------------------------\n");
 
-    for (Scope *s = st->current_scope; s != NULL; s = s->parent) {
+    for (Scope *s = st->all_scopes_head; s != NULL; s = s->all_next) {
         for (Symbol *sym = s->symbol_list; sym != NULL; sym = sym->scope_next) {
             printf("%-15s | %-10s | %-6d | %-12d\n",
                    sym->name, data_type_to_string(sym->type), sym->scope_level, sym->line_declared);

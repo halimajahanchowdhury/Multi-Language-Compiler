@@ -97,6 +97,7 @@ static void generate_x86_assembly(const char *input_path) {
 }
 
 int main(int argc, char **argv) {
+    setvbuf(stdout, NULL, _IONBF, 0);
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <source_file.c>\n", argv[0]);
         return 1;
