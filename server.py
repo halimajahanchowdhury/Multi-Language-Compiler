@@ -106,7 +106,7 @@ class CompilerHandler(http.server.SimpleHTTPRequestHandler):
 
                 stdout = proc.stdout
                 stderr = proc.stderr
-                success = (proc.returncode == 0)
+                success = (proc.returncode == 0) and not execution_failed
 
                 # Parse all 6 phases from compiler stdout
                 phase1_tokens = ""
@@ -142,7 +142,10 @@ class CompilerHandler(http.server.SimpleHTTPRequestHandler):
 
                 errors_text = stderr.strip()
                 if not success and not errors_text:
-                    errors_text = stdout.strip()
+                    if execution_failed:
+                        errors_text = program_output.strip()
+                    else:
+                        errors_text = stdout.strip()
 
                 response = {
                     "success": success,
