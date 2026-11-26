@@ -62,20 +62,15 @@ static void generate_x86_assembly(const char *input_path) {
     snprintf(asm_path, sizeof(asm_path), "%s.s", input_path);
 
     char cmd[1024];
-    snprintf(cmd, sizeof(cmd), "g++ -S -masm=intel -O1 \"%s\" -o \"%s\" 2>nul", input_path, asm_path);
+    snprintf(cmd, sizeof(cmd), "g++ -S -masm=intel -O0 -fno-asynchronous-unwind-tables \"%s\" -o \"%s\" 2>nul", input_path, asm_path);
     int ret = system(cmd);
 
     if (ret == 0) {
         FILE *asm_file = fopen(asm_path, "r");
         if (asm_file) {
             char buf[512];
-            int count = 0;
-            while (fgets(buf, sizeof(buf), asm_file) && count < 60) {
+            while (fgets(buf, sizeof(buf), asm_file)) {
                 printf("%s", buf);
-                count++;
-            }
-            if (!feof(asm_file)) {
-                printf("... [Target assembly truncated for preview]\n");
             }
             fclose(asm_file);
             remove(asm_path);
