@@ -64,6 +64,15 @@ class CompilerHandler(http.server.SimpleHTTPRequestHandler):
                             if os.path.exists(bin_out): os.remove(bin_out)
                         else:
                             program_output = "[GCC Build Error]\n" + (comp.stderr or comp.stdout)
+                    elif lang == "cpp":
+                        bin_out = tmp_path.replace(".cpp", ".exe")
+                        comp = subprocess.run(["g++", "-O1", tmp_path, "-o", bin_out], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                        if comp.returncode == 0:
+                            run = subprocess.run([bin_out], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=5)
+                            program_output = run.stdout + ("\n" + run.stderr if run.stderr else "")
+                            if os.path.exists(bin_out): os.remove(bin_out)
+                        else:
+                            program_output = "[G++ Build Error]\n" + (comp.stderr or comp.stdout)
                 except Exception as ex:
                     program_output = f"[Execution Error] {str(ex)}"
 
