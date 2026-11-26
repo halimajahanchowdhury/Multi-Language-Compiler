@@ -10,6 +10,11 @@ src/lexer/lex.yy.c
 src/parser/parser.tab.c
 src/parser/parser.tab.h
 src/parser/parser.output
+*lex.yy.c
+*parser.tab.c
+*parser.tab.h
+*.output
+*.s
 y.tab.c
 y.tab.h
 lex.yy.c
