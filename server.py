@@ -10,6 +10,9 @@ PORT = 5000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WEB_DIR = os.path.join(BASE_DIR, "frontend")
 COMPILER_BIN = os.path.join(BASE_DIR, "compiler.exe")
+C_COMPILER_BIN = os.path.join(BASE_DIR, "C_Compiler", "c_compiler.exe")
+CPP_COMPILER_BIN = os.path.join(BASE_DIR, "CPP_Compiler", "cpp_compiler.exe")
+JAVA_COMPILER_BIN = os.path.join(BASE_DIR, "Java_Compiler", "java_compiler.exe")
 
 class CompilerHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -38,8 +41,15 @@ class CompilerHandler(http.server.SimpleHTTPRequestHandler):
                     tmp.write(code)
                     tmp_path = tmp.name
 
-                # Run compiler
-                cmd = [COMPILER_BIN, f"--lang={lang}", tmp_path]
+                # Route to dedicated subcompiler or fallback to unified driver
+                cmd = [COMPILER_BIN, f"--lang={lang}"]
+                if lang == "c" and os.path.exists(C_COMPILER_BIN):
+                    cmd = [C_COMPILER_BIN]
+                elif lang == "cpp" and os.path.exists(CPP_COMPILER_BIN):
+                    cmd = [CPP_COMPILER_BIN]
+                elif lang == "java" and os.path.exists(JAVA_COMPILER_BIN):
+                    cmd = [JAVA_COMPILER_BIN]
+                cmd.append(tmp_path)
                 proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
                 # Clean up temp file
