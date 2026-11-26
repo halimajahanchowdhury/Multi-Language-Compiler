@@ -541,16 +541,20 @@
         <div class="panel">
             <div class="panel-header">
                 <div class="tab-group">
-                    <button class="tab-btn active" onclick="switchTab('tac')">Three Address Code</button>
-                    <button class="tab-btn" onclick="switchTab('ast')">Abstract Syntax Tree</button>
-                    <button class="tab-btn" onclick="switchTab('symtab')">Symbol Table</button>
-                    <button class="tab-btn" onclick="switchTab('raw')">Full Terminal Output</button>
+                    <button class="tab-btn active" onclick="switchTab('output', this)">Program Output</button>
+                    <button class="tab-btn" onclick="switchTab('phase1', this)">Phase 1: Tokens</button>
+                    <button class="tab-btn" onclick="switchTab('phase2', this)">Phase 2: AST</button>
+                    <button class="tab-btn" onclick="switchTab('phase3', this)">Phase 3: Symbol Table</button>
+                    <button class="tab-btn" onclick="switchTab('phase4', this)">Phase 4: TAC</button>
+                    <button class="tab-btn" onclick="switchTab('phase5', this)">Phase 5: Optimization</button>
+                    <button class="tab-btn" onclick="switchTab('phase6', this)">Phase 6: Code Generation</button>
+                    <button class="tab-btn" onclick="switchTab('raw', this)">Terminal Logs</button>
                 </div>
             </div>
 
             <div class="output-container" id="outputContainer">
                 <div id="statusBanner"></div>
-                <pre id="outputView" class="tac-output">// Click "Run" to compile and view Three Address Code</pre>
+                <pre id="outputView" class="console-output">// Click "Run" to compile through all 6 phases and execute the program</pre>
             </div>
         </div>
     </div>
