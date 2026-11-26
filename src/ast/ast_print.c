@@ -1,15 +1,30 @@
 #include "ast.h"
 
-static void print_indent(int indent) {
-    for (int i = 0; i < indent; i++) {
-        printf("  ");
+/* Helper to render structured tree hierarchy with connectors */
+static void ast_print_node(const ASTNode *node, const char *prefix, int is_last);
+
+static void print_child(const char *label, const ASTNode *child, const char *prefix, int is_last) {
+    char new_prefix[512];
+    snprintf(new_prefix, sizeof(new_prefix), "%s%s", prefix, is_last ? "    " : "|   ");
+
+    printf("%s%s%s\n", prefix, is_last ? "`-- " : "|-- ", label);
+    if (child) {
+        /* Print child statements */
+        const ASTNode *curr = child;
+        while (curr) {
+            ast_print_node(curr, new_prefix, curr->next == NULL);
+            curr = curr->next;
+        }
     }
 }
 
-void ast_print(const ASTNode *node, int indent) {
+static void ast_print_node(const ASTNode *node, const char *prefix, int is_last) {
     if (!node) return;
 
-    print_indent(indent);
+    char new_prefix[512];
+    snprintf(new_prefix, sizeof(new_prefix), "%s%s", prefix, is_last ? "    " : "|   ");
+
+    printf("%s%s", prefix, is_last ? "`-- " : "|-- ");
 
     switch (node->node_type) {
         case NODE_PROGRAM:
@@ -23,7 +38,11 @@ void ast_print(const ASTNode *node, int indent) {
         case NODE_BLOCK:
             printf("Block [Line %d]\n", node->line);
             if (node->body) {
-                ast_print(node->body, indent + 1);
+                const ASTNode *curr = node->body;
+                while (curr) {
+                    ast_print_node(curr, new_prefix, curr->next == NULL);
+                    curr = curr->next;
+                }
             }
             break;
 
@@ -33,9 +52,7 @@ void ast_print(const ASTNode *node, int indent) {
                    node->attr.ident_name ? node->attr.ident_name : "(anonymous)",
                    node->line);
             if (node->right) {
-                print_indent(indent + 1);
-                printf("InitExpr:\n");
-                ast_print(node->right, indent + 2);
+                print_child("InitExpr", node->right, new_prefix, 1);
             }
             break;
 
@@ -44,66 +61,48 @@ void ast_print(const ASTNode *node, int indent) {
                    node->attr.ident_name ? node->attr.ident_name : "(anonymous)",
                    node->line);
             if (node->right) {
-                ast_print(node->right, indent + 1);
+                ast_print_node(node->right, new_prefix, 1);
             }
             break;
 
         case NODE_IF:
             printf("IfStatement [Line %d]\n", node->line);
-            print_indent(indent + 1);
-            printf("Condition:\n");
-            ast_print(node->cond, indent + 2);
-            print_indent(indent + 1);
-            printf("ThenBranch:\n");
-            ast_print(node->then_branch, indent + 2);
+            print_child("Condition", node->cond, new_prefix, 0);
+            print_child("ThenBranch", node->then_branch, new_prefix, node->else_branch == NULL);
             if (node->else_branch) {
-                print_indent(indent + 1);
-                printf("ElseBranch:\n");
-                ast_print(node->else_branch, indent + 2);
+                print_child("ElseBranch", node->else_branch, new_prefix, 1);
             }
             break;
 
         case NODE_WHILE:
             printf("WhileLoop [Line %d]\n", node->line);
-            print_indent(indent + 1);
-            printf("Condition:\n");
-            ast_print(node->cond, indent + 2);
-            print_indent(indent + 1);
-            printf("Body:\n");
-            ast_print(node->body, indent + 2);
+            print_child("Condition", node->cond, new_prefix, 0);
+            print_child("Body", node->body, new_prefix, 1);
             break;
 
         case NODE_FOR:
             printf("ForLoop [Line %d]\n", node->line);
-            if (node->init) {
-                print_indent(indent + 1);
-                printf("Init:\n");
-                ast_print(node->init, indent + 2);
-            }
-            if (node->cond) {
-                print_indent(indent + 1);
-                printf("Condition:\n");
-                ast_print(node->cond, indent + 2);
-            }
-            if (node->step) {
-                print_indent(indent + 1);
-                printf("Step:\n");
-                ast_print(node->step, indent + 2);
-            }
-            print_indent(indent + 1);
-            printf("Body:\n");
-            ast_print(node->body, indent + 2);
+            if (node->init) print_child("Init", node->init, new_prefix, 0);
+            if (node->cond) print_child("Condition", node->cond, new_prefix, 0);
+            if (node->step) print_child("Step", node->step, new_prefix, 0);
+            print_child("Body", node->body, new_prefix, 1);
             break;
 
         case NODE_PRINT:
             printf("PrintStatement [Line %d]\n", node->line);
-            ast_print(node->left, indent + 1);
+            if (node->left) {
+                const ASTNode *curr = node->left;
+                while (curr) {
+                    ast_print_node(curr, new_prefix, curr->next == NULL);
+                    curr = curr->next;
+                }
+            }
             break;
 
         case NODE_RETURN:
             printf("ReturnStatement [Line %d]\n", node->line);
             if (node->left) {
-                ast_print(node->left, indent + 1);
+                ast_print_node(node->left, new_prefix, 1);
             }
             break;
 
@@ -112,8 +111,8 @@ void ast_print(const ASTNode *node, int indent) {
                    node->attr.op ? node->attr.op : "?",
                    data_type_to_string(node->eval_type),
                    node->line);
-            ast_print(node->left, indent + 1);
-            ast_print(node->right, indent + 1);
+            if (node->left) ast_print_node(node->left, new_prefix, 0);
+            if (node->right) ast_print_node(node->right, new_prefix, 1);
             break;
 
         case NODE_UNARY_OP:
@@ -121,7 +120,7 @@ void ast_print(const ASTNode *node, int indent) {
                    node->attr.op ? node->attr.op : "?",
                    data_type_to_string(node->eval_type),
                    node->line);
-            ast_print(node->left, indent + 1);
+            if (node->left) ast_print_node(node->left, new_prefix, 1);
             break;
 
         case NODE_IDENT:
@@ -152,9 +151,25 @@ void ast_print(const ASTNode *node, int indent) {
             printf("UnknownNode\n");
             break;
     }
+}
 
-    /* Print subsequent statements at same indentation */
-    if (node->next) {
-        ast_print(node->next, indent);
+void ast_print(const ASTNode *node, int indent) {
+    (void)indent;
+    if (!node) return;
+
+    /* If top-level node is a Block, print root and its children with tree branches */
+    if (node->node_type == NODE_BLOCK) {
+        printf("Block [Line %d]\n", node->line);
+        const ASTNode *curr = node->body;
+        while (curr) {
+            ast_print_node(curr, "", curr->next == NULL);
+            curr = curr->next;
+        }
+    } else {
+        const ASTNode *curr = node;
+        while (curr) {
+            ast_print_node(curr, "", curr->next == NULL);
+            curr = curr->next;
+        }
     }
 }
