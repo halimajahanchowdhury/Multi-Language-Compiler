@@ -3,6 +3,7 @@ CFLAGS = -Wall -Wextra -Isrc -Isrc/lexer -Isrc/parser -Isrc/ast -Isrc/symbol_tab
 FLEX = flex
 BISON = bison
 RM = rm -f
+MAKE = make
 
 # Target executable
 TARGET = compiler.exe
@@ -16,7 +17,12 @@ SYM_DIR = src/symbol_table
 SEM_DIR = src/semantic
 TAC_DIR = src/tac
 
-all: $(TARGET)
+all: $(TARGET) subcompilers
+
+subcompilers:
+	$(MAKE) -C C_Compiler
+	$(MAKE) -C CPP_Compiler
+	$(MAKE) -C Java_Compiler
 
 # Parser generation
 $(PARSER_DIR)/parser.tab.c $(PARSER_DIR)/parser.tab.h: $(PARSER_DIR)/parser.y
@@ -26,7 +32,7 @@ $(PARSER_DIR)/parser.tab.c $(PARSER_DIR)/parser.tab.h: $(PARSER_DIR)/parser.y
 $(LEXER_DIR)/lex.yy.c: $(LEXER_DIR)/lexer.l $(PARSER_DIR)/parser.tab.h
 	$(FLEX) -o $(LEXER_DIR)/lex.yy.c $(LEXER_DIR)/lexer.l
 
-# Build compiler executable
+# Build unified compiler executable
 $(TARGET): $(LEXER_DIR)/lex.yy.c $(PARSER_DIR)/parser.tab.c
 	$(CC) $(CFLAGS) -o $@ \
 		$(SRC_DIR)/main.c \
@@ -47,5 +53,8 @@ clean:
 	$(RM) $(LEXER_DIR)/lex.yy.c
 	$(RM) $(PARSER_DIR)/parser.tab.c $(PARSER_DIR)/parser.tab.h
 	$(RM) *.o
+	$(MAKE) -C C_Compiler clean
+	$(MAKE) -C CPP_Compiler clean
+	$(MAKE) -C Java_Compiler clean
 
-.PHONY: all clean
+.PHONY: all clean subcompilers
