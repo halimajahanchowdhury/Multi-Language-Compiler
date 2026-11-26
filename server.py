@@ -5,6 +5,7 @@ import os
 import subprocess
 import tempfile
 import webbrowser
+import re
 
 PORT = 5000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -73,6 +74,18 @@ class CompilerHandler(http.server.SimpleHTTPRequestHandler):
                             if os.path.exists(bin_out): os.remove(bin_out)
                         else:
                             program_output = "[G++ Build Error]\n" + (comp.stderr or comp.stdout)
+                    elif lang == "java":
+                        m = re.search(r'class\s+([A-Za-z_][A-Za-z0-9_]*)', code)
+                        classname = m.group(1) if m else "Main"
+                        java_dir = os.path.dirname(tmp_path)
+                        comp = subprocess.run(["javac", tmp_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                        if comp.returncode == 0:
+                            run = subprocess.run(["java", "-cp", java_dir, classname], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=5)
+                            program_output = run.stdout + ("\n" + run.stderr if run.stderr else "")
+                            cls_file = os.path.join(java_dir, f"{classname}.class")
+                            if os.path.exists(cls_file): os.remove(cls_file)
+                        else:
+                            program_output = "[Javac Build Error]\n" + (comp.stderr or comp.stdout)
                 except Exception as ex:
                     program_output = f"[Execution Error] {str(ex)}"
 
