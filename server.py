@@ -52,6 +52,21 @@ class CompilerHandler(http.server.SimpleHTTPRequestHandler):
                 cmd.append(tmp_path)
                 proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
+                # Native C Program Execution
+                program_output = ""
+                try:
+                    if lang == "c":
+                        bin_out = tmp_path.replace(".c", ".exe")
+                        comp = subprocess.run(["gcc", "-O1", tmp_path, "-o", bin_out], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                        if comp.returncode == 0:
+                            run = subprocess.run([bin_out], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=5)
+                            program_output = run.stdout + ("\n" + run.stderr if run.stderr else "")
+                            if os.path.exists(bin_out): os.remove(bin_out)
+                        else:
+                            program_output = "[GCC Build Error]\n" + (comp.stderr or comp.stdout)
+                except Exception as ex:
+                    program_output = f"[Execution Error] {str(ex)}"
+
                 # Clean up temp file
                 if os.path.exists(tmp_path):
                     os.remove(tmp_path)
@@ -98,6 +113,7 @@ class CompilerHandler(http.server.SimpleHTTPRequestHandler):
 
                 response = {
                     "success": success,
+                    "program_output": program_output.strip() or "// Program executed with 0 console output",
                     "phase1_tokens": phase1_tokens or "// Tokens unavailable",
                     "phase2_ast": phase2_ast or "// AST unavailable",
                     "phase3_symtab": phase3_symtab or "// Symbol Table unavailable",
