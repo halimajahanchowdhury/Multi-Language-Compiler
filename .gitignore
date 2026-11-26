@@ -25,3 +25,5 @@ lex.yy.c
 *.swp
 *~
 Thumbs.db
+__pycache__/
+*.pyc
