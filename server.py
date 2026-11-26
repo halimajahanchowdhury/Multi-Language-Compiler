@@ -8,7 +8,7 @@ import webbrowser
 
 PORT = 5000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-WEB_DIR = os.path.join(BASE_DIR, "web")
+WEB_DIR = os.path.join(BASE_DIR, "frontend")
 COMPILER_BIN = os.path.join(BASE_DIR, "compiler.exe")
 
 class CompilerHandler(http.server.SimpleHTTPRequestHandler):
