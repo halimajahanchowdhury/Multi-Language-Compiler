@@ -60,28 +60,37 @@ class CompilerHandler(http.server.SimpleHTTPRequestHandler):
                 stderr = proc.stderr
                 success = (proc.returncode == 0)
 
-                # Parse sections from stdout
-                ast_text = ""
-                symtab_text = ""
-                tac_text = ""
+                # Parse all 6 phases from compiler stdout
+                phase1_tokens = ""
+                phase2_ast = ""
+                phase3_symtab = ""
+                phase4_tac = ""
+                phase5_opt = ""
+                phase6_codegen = ""
 
-                if "ABSTRACT SYNTAX TREE (AST)" in stdout:
-                    parts = stdout.split("ABSTRACT SYNTAX TREE (AST)")
-                    if len(parts) > 1:
-                        sub = parts[1].split("RUNNING SEMANTIC ANALYSIS")[0]
-                        ast_text = sub.strip().strip("=").strip()
+                if "PHASE 1: LEXICAL ANALYSIS" in stdout:
+                    p1 = stdout.split("PHASE 1: LEXICAL ANALYSIS")[1].split("PHASE 2: SYNTAX ANALYSIS")[0]
+                    phase1_tokens = p1.strip().strip("=").strip()
 
-                if "SYMBOL TABLE SNAPSHOT" in stdout:
-                    parts = stdout.split("SYMBOL TABLE SNAPSHOT")
-                    if len(parts) > 1:
-                        sub = parts[1].split("Validation Succeeded")[0]
-                        symtab_text = sub.strip().strip("=").strip()
+                if "PHASE 2: SYNTAX ANALYSIS" in stdout:
+                    p2 = stdout.split("PHASE 2: SYNTAX ANALYSIS")[1].split("PHASE 3: SEMANTIC ANALYSIS")[0]
+                    phase2_ast = p2.strip().strip("=").strip()
 
-                if "THREE ADDRESS CODE (TAC) OUTPUT" in stdout:
-                    parts = stdout.split("THREE ADDRESS CODE (TAC) OUTPUT")
-                    if len(parts) > 1:
-                        sub = parts[1].strip().strip("=").strip()
-                        tac_text = sub
+                if "PHASE 3: SEMANTIC ANALYSIS" in stdout:
+                    p3 = stdout.split("PHASE 3: SEMANTIC ANALYSIS")[1].split("PHASE 4: INTERMEDIATE CODE GENERATION")[0]
+                    phase3_symtab = p3.strip().strip("=").strip()
+
+                if "PHASE 4: INTERMEDIATE CODE GENERATION" in stdout:
+                    p4 = stdout.split("PHASE 4: INTERMEDIATE CODE GENERATION")[1].split("PHASE 5: CODE OPTIMIZATION")[0]
+                    phase4_tac = p4.strip().strip("=").strip()
+
+                if "PHASE 5: CODE OPTIMIZATION" in stdout:
+                    p5 = stdout.split("PHASE 5: CODE OPTIMIZATION")[1].split("PHASE 6: CODE GENERATION")[0]
+                    phase5_opt = p5.strip().strip("=").strip()
+
+                if "PHASE 6: CODE GENERATION" in stdout:
+                    p6 = stdout.split("PHASE 6: CODE GENERATION")[1]
+                    phase6_codegen = p6.strip().strip("=").strip()
 
                 errors_text = stderr.strip()
                 if not success and not errors_text:
@@ -89,10 +98,13 @@ class CompilerHandler(http.server.SimpleHTTPRequestHandler):
 
                 response = {
                     "success": success,
+                    "phase1_tokens": phase1_tokens or "// Tokens unavailable",
+                    "phase2_ast": phase2_ast or "// AST unavailable",
+                    "phase3_symtab": phase3_symtab or "// Symbol Table unavailable",
+                    "phase4_tac": phase4_tac or "// TAC unavailable",
+                    "phase5_opt": phase5_opt or "// Optimization pass unavailable",
+                    "phase6_codegen": phase6_codegen or "// Code generation unavailable",
                     "raw": stdout + "\n" + stderr,
-                    "ast": ast_text,
-                    "symtab": symtab_text,
-                    "tac": tac_text,
                     "errors": errors_text
                 }
 
