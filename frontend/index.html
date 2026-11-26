@@ -654,15 +654,19 @@ if (flag == true) {
         };
 
         let currentResult = {
-            tac: "",
-            ast: "",
-            symtab: "",
+            program_output: "",
+            phase1_tokens: "",
+            phase2_ast: "",
+            phase3_symtab: "",
+            phase4_tac: "",
+            phase5_opt: "",
+            phase6_codegen: "",
             raw: "",
             success: true,
             errors: ""
         };
 
-        let activeTab = "tac";
+        let activeTab = "output";
 
         function updateLineNumbers() {
             const editor = document.getElementById("codeEditor");
@@ -692,25 +696,39 @@ if (flag == true) {
             editor.focus();
         }
 
-        function switchTab(tab) {
+        function switchTab(tab, btn) {
             activeTab = tab;
-            document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
-            event.target.classList.add("active");
+            document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+            if (btn) {
+                btn.classList.add("active");
+            }
 
             const outView = document.getElementById("outputView");
             outView.className = "";
 
-            if (tab === "tac") {
-                outView.className = "tac-output";
-                outView.innerText = currentResult.tac || "// No Three Address Code generated yet";
-            } else if (tab === "ast") {
+            if (tab === "output") {
+                outView.className = "console-output";
+                outView.innerText = currentResult.program_output || "// Click 'Run' to compile through all 6 phases and execute the program";
+            } else if (tab === "phase1") {
+                outView.className = "tokens-output";
+                outView.innerText = currentResult.phase1_tokens || "// Phase 1: Lexical Analysis Token Stream unavailable";
+            } else if (tab === "phase2") {
                 outView.className = "ast-output";
-                outView.innerText = currentResult.ast || "// No AST available";
-            } else if (tab === "symtab") {
+                outView.innerText = currentResult.phase2_ast || "// Phase 2: Syntax Analysis AST unavailable";
+            } else if (tab === "phase3") {
                 outView.className = "symtab-output";
-                outView.innerText = currentResult.symtab || "// No Symbol Table snapshot available";
+                outView.innerText = currentResult.phase3_symtab || "// Phase 3: Symbol Table & Semantic Snapshot unavailable";
+            } else if (tab === "phase4") {
+                outView.className = "tac-output";
+                outView.innerText = currentResult.phase4_tac || "// Phase 4: Three Address Code (TAC) unavailable";
+            } else if (tab === "phase5") {
+                outView.className = "opt-output";
+                outView.innerText = currentResult.phase5_opt || "// Phase 5: Constant Folding Optimization unavailable";
+            } else if (tab === "phase6") {
+                outView.className = "codegen-output";
+                outView.innerText = currentResult.phase6_codegen || "// Phase 6: Code Generation (Assembly / Bytecode) unavailable";
             } else if (tab === "raw") {
-                outView.innerText = currentResult.raw || "// No output yet";
+                outView.innerText = currentResult.raw || "// Full compilation log unavailable";
             }
         }
 
@@ -725,7 +743,7 @@ if (flag == true) {
                 return;
             }
 
-            banner.innerHTML = `<div class="success-banner" style="color: var(--accent-blue);">Compiling and generating Three Address Code...</div>`;
+            banner.innerHTML = `<div class="success-banner" style="color: var(--accent-blue);">Compiling through 6 phases and executing program...</div>`;
 
             try {
                 const response = await fetch("/compile", {
@@ -738,23 +756,13 @@ if (flag == true) {
                 currentResult = data;
 
                 if (data.success) {
-                    banner.innerHTML = `<div class="success-banner">Compilation Succeeded &bull; Front-End & TAC Verified (0 Errors)</div>`;
+                    banner.innerHTML = `<div class="success-banner">Compilation Succeeded &bull; Front-End, 6 Phases & Target Execution Complete (0 Errors)</div>`;
                 } else {
                     banner.innerHTML = `<div class="error-banner">Compilation Diagnostics: Errors Encountered<br>${escapeHtml(data.errors || "Syntax or Semantic Error")}</div>`;
                 }
 
-                if (activeTab === "tac") {
-                    outView.className = "tac-output";
-                    outView.innerText = data.tac || (data.success ? "// TAC Empty" : "// TAC generation halted due to errors");
-                } else if (activeTab === "ast") {
-                    outView.className = "ast-output";
-                    outView.innerText = data.ast || "// AST unavailable";
-                } else if (activeTab === "symtab") {
-                    outView.className = "symtab-output";
-                    outView.innerText = data.symtab || "// Symbol Table unavailable";
-                } else {
-                    outView.innerText = data.raw;
-                }
+                const activeBtn = document.querySelector(`.tab-btn.active`);
+                switchTab(activeTab, activeBtn);
 
             } catch (err) {
                 banner.innerHTML = `<div class="error-banner">Server Error: ${err.message}</div>`;
