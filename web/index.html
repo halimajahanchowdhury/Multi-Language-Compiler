@@ -748,7 +748,16 @@ if (flag == true) {
         }
 
         // Support Tab key & Ctrl+Enter shortcut
-        document.getElementById("codeEditor").addEventListener("keydown", function(e) {
+        const codeEditorEl = document.getElementById("codeEditor");
+        const lineNumbersEl = document.getElementById("lineNumbers");
+
+        function syncEditorScroll() {
+            lineNumbersEl.scrollTop = codeEditorEl.scrollTop;
+        }
+
+        codeEditorEl.addEventListener("scroll", syncEditorScroll);
+
+        codeEditorEl.addEventListener("keydown", function(e) {
             if (e.key === "Tab") {
                 e.preventDefault();
                 const start = this.selectionStart;
