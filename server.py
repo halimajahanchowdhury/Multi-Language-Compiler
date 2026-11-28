@@ -106,6 +106,8 @@ class CompilerHandler(http.server.SimpleHTTPRequestHandler):
 
                 stdout = proc.stdout
                 stderr = proc.stderr
+                # Strip out internal temp source file path from terminal logs
+                stdout = re.sub(r'Source File: [^\n]+\n*', '', stdout)
                 success = (proc.returncode == 0) and not execution_failed
 
                 # Parse all 6 phases from compiler stdout

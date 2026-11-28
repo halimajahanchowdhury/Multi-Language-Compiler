@@ -8,6 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Monaco Editor CSS & CDN Loader -->
+    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
     <style>
         /* Light Theme (Default) */
         :root[data-theme="light"] {
@@ -333,7 +336,18 @@
             box-sizing: border-box;
         }
 
-        .line-numbers {
+        #monacoEditorRoot {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .fallback-line-numbers {
             width: 50px;
             min-width: 50px;
             flex-shrink: 0;
@@ -469,7 +483,6 @@
                 <path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/>
             </svg>
             <span class="brand-title">Multi-Language Compiler</span>
-            <span class="brand-badge">Flex & Bison</span>
         </div>
 
         <div class="header-actions">
@@ -531,9 +544,10 @@
                 </div>
             </div>
 
-            <div class="editor-container">
-                <div class="line-numbers" id="lineNumbers">1</div>
-                <textarea id="codeEditor" class="code-editor" spellcheck="false" oninput="updateLineNumbers()"></textarea>
+            <div class="editor-container" id="editorContainer">
+                <div id="monacoEditorRoot"></div>
+                <div class="fallback-line-numbers" id="lineNumbers" style="display: none;">1</div>
+                <textarea id="codeEditor" class="code-editor" style="display: none;" spellcheck="false" oninput="updateLineNumbers()"></textarea>
             </div>
         </div>
 
@@ -563,10 +577,10 @@
     <footer>
         <div>
             <span class="status-dot"></span>
-            <span>Compiler Ready (MinGW GCC + Flex + Bison)</span>
+            <span>Compiler Ready</span>
         </div>
         <div>
-            <span>Press Ctrl+Enter to Run &bull; Metropolitan University, Bangladesh</span>
+            <span>Metropolitan University, Bangladesh</span>
         </div>
     </footer>
 
@@ -667,12 +681,103 @@ if (flag == true) {
         };
 
         let activeTab = "output";
+        let monacoEditor = null;
+
+        function getMonacoLang(lang) {
+            if (lang === "cpp") return "cpp";
+            if (lang === "java") return "java";
+            return "c";
+        }
+
+        function getCode() {
+            if (monacoEditor) {
+                return monacoEditor.getValue();
+            }
+            const el = document.getElementById("codeEditor");
+            return el ? el.value : "";
+        }
+
+        function setCode(val) {
+            if (monacoEditor) {
+                monacoEditor.setValue(val);
+            } else {
+                const el = document.getElementById("codeEditor");
+                if (el) {
+                    el.value = val;
+                    updateLineNumbers();
+                }
+            }
+        }
+
+        function initMonaco() {
+            if (typeof require === "undefined") {
+                console.warn("[Monaco] CDN loader unavailable, using standard editor fallback.");
+                const lineNums = document.getElementById("lineNumbers");
+                const codeTextarea = document.getElementById("codeEditor");
+                if (lineNums) lineNums.style.display = "block";
+                if (codeTextarea) codeTextarea.style.display = "block";
+                return;
+            }
+
+            require.config({ paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs" } });
+            require(["vs/editor/editor.main"], function () {
+                const lang = document.getElementById("langSelect").value;
+                const currentTheme = document.documentElement.getAttribute("data-theme") || "light";
+                const initialCode = samples[lang] || samples.c;
+
+                monacoEditor = monaco.editor.create(document.getElementById("monacoEditorRoot"), {
+                    value: initialCode,
+                    language: getMonacoLang(lang),
+                    theme: currentTheme === "dark" ? "vs-dark" : "vs",
+                    fontSize: 13,
+                    fontFamily: "'JetBrains Mono', Consolas, 'Courier New', monospace",
+                    lineHeight: 22,
+                    minimap: { enabled: true },
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    tabSize: 4,
+                    insertSpaces: true,
+                    wordWrap: "on",
+                    lineNumbers: "on",
+                    lineNumbersMinChars: 3,
+                    glyphMargin: false,
+                    renderLineHighlight: "all",
+                    bracketPairColorization: { enabled: true }
+                });
+
+                // Bind Ctrl+Enter and Cmd+Enter inside Monaco Editor
+                monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, function () {
+                    runCompiler();
+                });
+
+                if (document.fonts && document.fonts.ready) {
+                    document.fonts.ready.then(function () {
+                        if (window.monaco && monaco.editor) {
+                            monaco.editor.remeasureFonts();
+                        }
+                    });
+                }
+
+                window.addEventListener("resize", function () {
+                    if (monacoEditor) monacoEditor.layout();
+                });
+            }, function (err) {
+                console.warn("[Monaco] Loading failed, using standard fallback:", err);
+                const lineNums = document.getElementById("lineNumbers");
+                const codeTextarea = document.getElementById("codeEditor");
+                if (lineNums) lineNums.style.display = "block";
+                if (codeTextarea) codeTextarea.style.display = "block";
+            });
+        }
 
         function updateLineNumbers() {
             const editor = document.getElementById("codeEditor");
+            if (!editor) return;
             const lines = editor.value.split("\n").length;
             const lineNumbersDiv = document.getElementById("lineNumbers");
-            lineNumbersDiv.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join("<br>");
+            if (lineNumbersDiv) {
+                lineNumbersDiv.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join("<br>");
+            }
             if (typeof syncEditorScroll === "function") {
                 syncEditorScroll();
             }
@@ -683,17 +788,31 @@ if (flag == true) {
             const extMap = { c: "main.c", cpp: "main.cpp", java: "Main.java" };
             document.getElementById("fileNameDisplay").innerText = extMap[lang] || "main.c";
             
-            // Auto load sample for selected language
-            const editor = document.getElementById("codeEditor");
-            editor.value = samples[lang] || samples.c;
-            updateLineNumbers();
+            const sampleCode = samples[lang] || samples.c;
+            if (monacoEditor && window.monaco) {
+                monaco.editor.setModelLanguage(monacoEditor.getModel(), getMonacoLang(lang));
+                monacoEditor.setValue(sampleCode);
+            } else {
+                const editor = document.getElementById("codeEditor");
+                if (editor) {
+                    editor.value = sampleCode;
+                    updateLineNumbers();
+                }
+            }
         }
 
         function clearCode() {
-            const editor = document.getElementById("codeEditor");
-            editor.value = "";
-            updateLineNumbers();
-            editor.focus();
+            if (monacoEditor) {
+                monacoEditor.setValue("");
+                monacoEditor.focus();
+            } else {
+                const editor = document.getElementById("codeEditor");
+                if (editor) {
+                    editor.value = "";
+                    updateLineNumbers();
+                    editor.focus();
+                }
+            }
         }
 
         function switchTab(tab, btn) {
@@ -734,7 +853,7 @@ if (flag == true) {
 
         async function runCompiler() {
             const lang = document.getElementById("langSelect").value;
-            const code = document.getElementById("codeEditor").value;
+            const code = getCode();
             const banner = document.getElementById("statusBanner");
             const outView = document.getElementById("outputView");
 
@@ -774,6 +893,10 @@ if (flag == true) {
             const current = html.getAttribute("data-theme") || "light";
             const target = current === "light" ? "dark" : "light";
             html.setAttribute("data-theme", target);
+
+            if (window.monaco && monacoEditor) {
+                monaco.editor.setTheme(target === "dark" ? "vs-dark" : "vs");
+            }
 
             const themeText = document.getElementById("themeText");
             const themeIcon = document.getElementById("themeIcon");
@@ -824,6 +947,7 @@ if (flag == true) {
 
         // Initialize default sample and line numbers
         onLanguageChange();
+        initMonaco();
     </script>
 </body>
 </html>

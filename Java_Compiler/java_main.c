@@ -142,8 +142,7 @@ int main(int argc, char **argv) {
     printf("============================================================\n");
     printf("              STANDALONE JAVA COMPILER FRONT-END            \n");
     printf("   Department of Computer Science & Engineering, MU         \n");
-    printf("============================================================\n");
-    printf("Source File: %s\n\n", input_path);
+    printf("============================================================\n\n");
 
     /* Phase 1: Lexical Analysis Tokens */
     dump_tokens(input_path);
